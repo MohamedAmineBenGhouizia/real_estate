@@ -7,7 +7,7 @@ const fs = require('fs');
 // @access  Public
 exports.getProperties = async (req, res) => {
     try {
-        const { type, status, minPrice, maxPrice } = req.query;
+        const { type, status, minPrice, maxPrice, bedrooms, bathrooms, minArea, maxArea, hasGarden, hasBalcony } = req.query;
         const where = {};
 
         if (type) where.type = type;
@@ -17,8 +17,31 @@ exports.getProperties = async (req, res) => {
             if (minPrice) where.price['$gte'] = minPrice;
             if (maxPrice) where.price['$lte'] = maxPrice;
         }
+        if (bedrooms) where.bedrooms = { '$gte': bedrooms };
+        if (bathrooms) where.bathrooms = { '$gte': bathrooms };
+        if (minArea || maxArea) {
+            where.area = {};
+            if (minArea) where.area['$gte'] = minArea;
+            if (maxArea) where.area['$lte'] = maxArea;
+        }
+        if (hasGarden === 'true') where.hasGarden = true;
+        if (hasBalcony === 'true') where.hasBalcony = true;
 
-        const properties = await Property.findAll({ where });
+        const Reservation = require('../models/Reservation');
+        const { Op } = require('sequelize');
+
+        const properties = await Property.findAll({
+            where,
+            include: [{
+                model: Reservation,
+                required: false,
+                where: {
+                    status: { [Op.or]: ['confirmed', 'pending'] },
+                    endDate: { [Op.gte]: new Date() }
+                },
+                attributes: ['startDate', 'endDate', 'status']
+            }]
+        });
         res.json(properties);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -45,11 +68,17 @@ exports.getProperty = async (req, res) => {
 // @access  Private/Admin
 exports.createProperty = async (req, res) => {
     try {
-        const { title, description, address, price, type, status } = req.body;
+        const { title, description, address, price, type, status, bedrooms, bathrooms, area, hasGarden, hasBalcony } = req.body;
         let images = [];
 
         if (req.files) {
+            console.log('Files received:', req.files);
             for (const file of req.files) {
+                console.log('Processing file:', file.path);
+                if (!fs.existsSync(file.path)) {
+                    console.error('File does not exist on disk:', file.path);
+                    throw new Error(`File not found: ${file.path}`);
+                }
                 const result = await cloudinary.uploader.upload(file.path, {
                     folder: 'real-estate-app'
                 });
@@ -66,11 +95,17 @@ exports.createProperty = async (req, res) => {
             price,
             type,
             status,
-            images
+            images,
+            bedrooms,
+            bathrooms,
+            area,
+            hasGarden,
+            hasBalcony
         });
 
         res.status(201).json(property);
     } catch (error) {
+        console.error('Error creating property:', error);
         // Clean up files if error occurs
         if (req.files) {
             req.files.forEach(file => {
@@ -91,7 +126,7 @@ exports.updateProperty = async (req, res) => {
             return res.status(404).json({ message: 'Property not found' });
         }
 
-        const { title, description, address, price, type, status } = req.body;
+        const { title, description, address, price, type, status, bedrooms, bathrooms, area, hasGarden, hasBalcony } = req.body;
 
         // Handle new images if uploaded (optional: append or replace logic)
         // For simplicity, let's say we append new images if any
@@ -113,7 +148,12 @@ exports.updateProperty = async (req, res) => {
             price,
             type,
             status,
-            images
+            images,
+            bedrooms,
+            bathrooms,
+            area,
+            hasGarden,
+            hasBalcony
         });
 
         res.json(property);
@@ -139,6 +179,33 @@ exports.deleteProperty = async (req, res) => {
 
         await property.destroy();
         res.json({ message: 'Property removed' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get property availability
+// @route   GET /api/properties/:id/availability
+// @access  Public
+exports.getAvailability = async (req, res) => {
+    try {
+        const Reservation = require('../models/Reservation');
+        const { Op } = require('sequelize');
+
+        const reservations = await Reservation.findAll({
+            where: {
+                propertyId: req.params.id,
+                status: {
+                    [Op.or]: ['confirmed', 'pending']
+                },
+                endDate: {
+                    [Op.gte]: new Date() // Only future/current reservations
+                }
+            },
+            attributes: ['startDate', 'endDate']
+        });
+
+        res.json(reservations);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

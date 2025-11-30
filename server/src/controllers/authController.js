@@ -9,7 +9,7 @@ const generateToken = (id, role) => {
 
 exports.register = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { firstName, lastName, email, password, birthDate, phoneNumber, role } = req.body;
 
         const userExists = await User.findOne({ where: { email } });
         if (userExists) {
@@ -17,20 +17,22 @@ exports.register = async (req, res) => {
         }
 
         // Allow setting role only if needed, otherwise default to client
-        // For security, maybe restrict 'admin' creation to admins or seed script
         const userRole = role === 'admin' ? 'admin' : 'client';
 
         const user = await User.create({
-            name,
+            firstName,
+            lastName,
             email,
             password,
+            birthDate,
+            phoneNumber,
             role: userRole
         });
 
         if (user) {
             res.status(201).json({
                 id: user.id,
-                name: user.name,
+                name: `${user.firstName} ${user.lastName}`,
                 email: user.email,
                 role: user.role,
                 token: generateToken(user.id, user.role)
@@ -52,7 +54,7 @@ exports.login = async (req, res) => {
         if (user && (await user.matchPassword(password))) {
             res.json({
                 id: user.id,
-                name: user.name,
+                name: `${user.firstName} ${user.lastName}`,
                 email: user.email,
                 role: user.role,
                 token: generateToken(user.id, user.role)

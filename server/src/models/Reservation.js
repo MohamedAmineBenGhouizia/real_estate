@@ -20,6 +20,26 @@ const Reservation = sequelize.define('Reservation', {
     status: {
         type: DataTypes.ENUM('pending', 'confirmed', 'cancelled'),
         defaultValue: 'pending'
+    },
+    modificationStatus: {
+        type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+        allowNull: true
+    },
+    requestedStartDate: {
+        type: DataTypes.DATEONLY,
+        allowNull: true
+    },
+    requestedEndDate: {
+        type: DataTypes.DATEONLY,
+        allowNull: true
+    },
+    modificationReason: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    modificationRequestedAt: {
+        type: DataTypes.DATE,
+        allowNull: true
     }
 });
 

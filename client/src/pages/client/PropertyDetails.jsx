@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { formatPrice } from '../../utils/formatPrice';
 import propertyService from '../../services/propertyService';
 import ReservationForm from '../../components/client/ReservationForm';
 import {
@@ -18,6 +19,8 @@ import {
     Bed as BedIcon,
     Bathtub as BathIcon,
     SquareFoot as SquareFootIcon,
+    Park as GardenIcon,
+    Balcony as BalconyIcon,
 } from '@mui/icons-material';
 
 // Swiper
@@ -39,7 +42,7 @@ const PropertyDetails = () => {
                 const data = await propertyService.getById(id);
                 setProperty(data);
             } catch (err) {
-                setError('Failed to load property details');
+                setError('Une erreur est survenue');
             } finally {
                 setLoading(false);
             }
@@ -49,12 +52,12 @@ const PropertyDetails = () => {
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>;
     if (error) return <Box sx={{ py: 8, textAlign: 'center' }}><Typography color="error">{error}</Typography></Box>;
-    if (!property) return <Box sx={{ py: 8, textAlign: 'center' }}><Typography>Property not found</Typography></Box>;
+    if (!property) return <Box sx={{ py: 8, textAlign: 'center' }}><Typography>Une erreur est survenue</Typography></Box>;
 
     return (
         <Box>
-            {/* Image Gallery */}
-            <Box sx={{ mb: 4, borderRadius: 4, overflow: 'hidden', height: { xs: 300, md: 500 } }}>
+            {/* Hero Section */}
+            <Box sx={{ position: 'relative', height: '60vh', width: '100%', bgcolor: 'black' }}>
                 <Swiper
                     modules={[Navigation, SwiperPagination]}
                     navigation
@@ -64,7 +67,12 @@ const PropertyDetails = () => {
                     {property.images && property.images.length > 0 ? (
                         property.images.map((img, index) => (
                             <SwiperSlide key={index}>
-                                <img src={img} alt={`Property ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <Box
+                                    component="img"
+                                    src={img}
+                                    alt={`Property ${index + 1}`}
+                                    sx={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }}
+                                />
                             </SwiperSlide>
                         ))
                     ) : (
@@ -73,64 +81,86 @@ const PropertyDetails = () => {
                         </SwiperSlide>
                     )}
                 </Swiper>
-            </Box>
 
-            <Grid container spacing={4}>
-                {/* Main Content */}
-                <Grid item xs={12} md={8}>
-                    <Box sx={{ mb: 4 }}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+                {/* Info Card Overlay */}
+                <Container maxWidth="lg" sx={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
+                    <Paper elevation={3} sx={{ p: 3, borderRadius: 2, backdropFilter: 'blur(10px)', bgcolor: 'rgba(255,255,255,0.95)' }}>
+                        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2}>
                             <Box>
-                                <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
+                                <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom sx={{ fontFamily: '"Playfair Display", serif' }}>
                                     {property.title}
                                 </Typography>
                                 <Stack direction="row" alignItems="center" spacing={1} color="text.secondary">
-                                    <LocationIcon />
+                                    <LocationIcon color="secondary" />
                                     <Typography variant="body1">{property.address}</Typography>
                                 </Stack>
                             </Box>
-                            <Chip
-                                label={property.status}
-                                color={property.status === 'available' ? 'success' : 'warning'}
-                                sx={{ textTransform: 'capitalize', fontSize: '1rem', px: 1 }}
-                            />
+                            <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+                                <Typography variant="h4" color="secondary" fontWeight="bold" sx={{ fontFamily: '"Playfair Display", serif' }}>
+                                    {formatPrice(property.price)}
+                                </Typography>
+                                <Chip
+                                    label={property.status === 'available' ? 'Disponible' : 'Réservé'}
+                                    color={property.status === 'available' ? 'success' : 'warning'}
+                                    sx={{ textTransform: 'capitalize', fontSize: '1rem', px: 1, mt: 1 }}
+                                />
+                            </Box>
                         </Stack>
+                    </Paper>
+                </Container>
+            </Box>
 
-                        <Divider sx={{ my: 3 }} />
-
-                        <Stack direction="row" spacing={4} sx={{ mb: 4 }}>
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <BedIcon color="action" />
-                                <Typography variant="h6">3 Beds</Typography>
+            <Container maxWidth="lg" sx={{ py: 5 }}>
+                <Grid container spacing={5}>
+                    {/* Main Content */}
+                    <Grid item xs={12} md={8}>
+                        <Box sx={{ mb: 5 }}>
+                            <Stack direction="row" spacing={2} sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
+                                <Paper elevation={0} sx={{ p: 2, border: '1px solid #eee', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <BedIcon color="action" />
+                                    <Typography variant="body1" fontWeight={500}>{property.bedrooms} Chambres</Typography>
+                                </Paper>
+                                <Paper elevation={0} sx={{ p: 2, border: '1px solid #eee', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <BathIcon color="action" />
+                                    <Typography variant="body1" fontWeight={500}>{property.bathrooms} Salles de bain</Typography>
+                                </Paper>
+                                <Paper elevation={0} sx={{ p: 2, border: '1px solid #eee', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <SquareFootIcon color="action" />
+                                    <Typography variant="body1" fontWeight={500}>{property.area} m²</Typography>
+                                </Paper>
+                                {property.hasGarden && (
+                                    <Paper elevation={0} sx={{ p: 2, border: '1px solid #eee', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <GardenIcon color="success" />
+                                        <Typography variant="body1" fontWeight={500}>Jardin</Typography>
+                                    </Paper>
+                                )}
+                                {property.hasBalcony && (
+                                    <Paper elevation={0} sx={{ p: 2, border: '1px solid #eee', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <BalconyIcon color="primary" />
+                                        <Typography variant="body1" fontWeight={500}>Balcon</Typography>
+                                    </Paper>
+                                )}
                             </Stack>
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <BathIcon color="action" />
-                                <Typography variant="h6">2 Baths</Typography>
-                            </Stack>
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <SquareFootIcon color="action" />
-                                <Typography variant="h6">120 m²</Typography>
-                            </Stack>
-                        </Stack>
 
-                        <Divider sx={{ my: 3 }} />
+                            <Divider sx={{ my: 4 }} />
 
-                        <Typography variant="h5" fontWeight="bold" gutterBottom>
-                            Description
-                        </Typography>
-                        <Typography variant="body1" paragraph color="text.secondary" sx={{ lineHeight: 1.8 }}>
-                            {property.description || 'No description available.'}
-                        </Typography>
-                    </Box>
+                            <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ fontFamily: '"Playfair Display", serif' }}>
+                                Description
+                            </Typography>
+                            <Typography variant="body1" paragraph color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>
+                                {property.description || 'Aucune description disponible.'}
+                            </Typography>
+                        </Box>
+                    </Grid>
+
+                    {/* Sidebar */}
+                    <Grid item xs={12} md={4}>
+                        <Box sx={{ position: 'sticky', top: 100 }}>
+                            <ReservationForm property={property} />
+                        </Box>
+                    </Grid>
                 </Grid>
-
-                {/* Sidebar */}
-                <Grid item xs={12} md={4}>
-                    <Box sx={{ position: 'sticky', top: 100 }}>
-                        <ReservationForm property={property} />
-                    </Box>
-                </Grid>
-            </Grid>
+            </Container>
         </Box>
     );
 };

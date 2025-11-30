@@ -95,3 +95,97 @@ exports.updateReservationStatus = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+// @desc    Request reservation modification
+// @route   POST /api/reservations/:id/request-modification
+// @access  Private (Client)
+exports.requestModification = async (req, res) => {
+    try {
+        const { startDate, endDate, reason } = req.body;
+        const reservation = await Reservation.findByPk(req.params.id);
+
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found' });
+        }
+
+        if (reservation.userId !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        reservation.requestedStartDate = startDate;
+        reservation.requestedEndDate = endDate;
+        reservation.modificationReason = reason;
+        reservation.modificationStatus = 'pending';
+        reservation.modificationRequestedAt = new Date();
+
+        await reservation.save();
+
+        res.json(reservation);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Approve reservation modification
+// @route   POST /api/admin/reservations/:id/approve-modification
+// @access  Private (Admin)
+exports.approveModification = async (req, res) => {
+    try {
+        const reservation = await Reservation.findByPk(req.params.id, {
+            include: [Property, Invoice]
+        });
+
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found' });
+        }
+
+        if (reservation.modificationStatus !== 'pending') {
+            return res.status(400).json({ message: 'No pending modification request' });
+        }
+
+        // Update dates
+        reservation.startDate = reservation.requestedStartDate;
+        reservation.endDate = reservation.requestedEndDate;
+        reservation.modificationStatus = 'approved';
+        reservation.status = 'confirmed';
+
+        await reservation.save();
+
+        // Recalculate Invoice
+        if (reservation.Invoices && reservation.Invoices.length > 0) {
+            const start = new Date(reservation.startDate);
+            const end = new Date(reservation.endDate);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const days = diffDays > 0 ? diffDays : 1;
+            const newAmount = reservation.Property.price * days;
+
+            const invoice = reservation.Invoices[0]; // Assuming one invoice per reservation
+            invoice.amount = newAmount;
+            await invoice.save();
+        }
+
+        res.json(reservation);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Reject reservation modification
+// @route   POST /api/admin/reservations/:id/reject-modification
+// @access  Private (Admin)
+exports.rejectModification = async (req, res) => {
+    try {
+        const reservation = await Reservation.findByPk(req.params.id);
+
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found' });
+        }
+
+        reservation.modificationStatus = 'rejected';
+        await reservation.save();
+
+        res.json(reservation);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

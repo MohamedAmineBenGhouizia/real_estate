@@ -33,10 +33,10 @@ const Login = () => {
         setLoading(true);
         try {
             await login(formData);
-            notify.success('Logged in successfully');
+            notify.success('Connexion réussie');
             navigate('/');
         } catch (error) {
-            notify.error(error.response?.data?.message || 'Login failed');
+            notify.error(error.response?.data?.message || 'Échec de la connexion');
         } finally {
             setLoading(false);
         }
@@ -45,17 +45,17 @@ const Login = () => {
     return (
         <Container maxWidth="sm" sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '80vh' }}>
             <Paper elevation={3} sx={{ p: 5, borderRadius: 3 }}>
-                <Typography variant="h4" fontWeight="bold" textAlign="center" gutterBottom>
-                    Welcome Back
+                <Typography variant="h4" fontWeight="bold" align="center" gutterBottom>
+                    Bienvenue
                 </Typography>
-                <Typography variant="body1" color="text.secondary" textAlign="center" sx={{ mb: 4 }}>
-                    Sign in to continue to RealEstate
+                <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 4 }}>
+                    Connectez-vous pour continuer
                 </Typography>
 
                 <Box component="form" onSubmit={handleSubmit}>
                     <Stack spacing={3}>
                         <TextField
-                            label="Email Address"
+                            label="Adresse Email"
                             name="email"
                             type="email"
                             value={formData.email}
@@ -64,7 +64,7 @@ const Login = () => {
                             required
                         />
                         <TextField
-                            label="Password"
+                            label="Mot de passe"
                             name="password"
                             type={showPassword ? 'text' : 'password'}
                             value={formData.password}
@@ -90,12 +90,12 @@ const Login = () => {
                             disabled={loading}
                             sx={{ py: 1.5, fontSize: '1rem', fontWeight: 'bold' }}
                         >
-                            {loading ? 'Signing in...' : 'Sign In'}
+                            {loading ? 'Connexion...' : 'Se connecter'}
                         </Button>
                     </Stack>
                 </Box>
 
-                <Divider sx={{ my: 4 }}>OR</Divider>
+                <Divider sx={{ my: 4 }}>OU</Divider>
 
                 <Stack direction="row" spacing={2}>
                     <Button variant="outlined" fullWidth startIcon={<Google />} color="inherit">
@@ -108,9 +108,9 @@ const Login = () => {
 
                 <Box sx={{ mt: 4, textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
-                        Don't have an account?{' '}
-                        <Link to="/register" style={{ textDecoration: 'none', fontWeight: 'bold', color: '#1976D2' }}>
-                            Sign up
+                        Vous n'avez pas de compte ?{' '}
+                        <Link to="/register" style={{ textDecoration: 'none', fontWeight: 'bold', color: '#D4AF37' }}>
+                            S'inscrire
                         </Link>
                     </Typography>
                 </Box>

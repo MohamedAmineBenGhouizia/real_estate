@@ -16,8 +16,12 @@ const Invoice = sequelize.define('Invoice', {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW
     },
+    dueDate: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
     status: {
-        type: DataTypes.ENUM('paid', 'unpaid'),
+        type: DataTypes.ENUM('paid', 'unpaid', 'pending'),
         defaultValue: 'unpaid'
     }
 });

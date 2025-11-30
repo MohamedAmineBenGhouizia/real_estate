@@ -9,6 +9,7 @@ const reservationRoutes = require('./routes/reservationRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const userRoutes = require('./routes/userRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const limiter = require('./middlewares/rateLimiter');
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api/properties', propertyRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

@@ -20,6 +20,21 @@ const reservationService = {
         const response = await api.patch(`/reservations/${id}/status`, { status });
         return response.data;
     },
+
+    requestModification: async (id, data) => {
+        const response = await api.post(`/reservations/${id}/request-modification`, data);
+        return response.data;
+    },
+
+    approveModification: async (id) => {
+        const response = await api.post(`/reservations/${id}/approve-modification`);
+        return response.data;
+    },
+
+    rejectModification: async (id) => {
+        const response = await api.post(`/reservations/${id}/reject-modification`);
+        return response.data;
+    },
 };
 
 export default reservationService;

@@ -33,6 +33,29 @@ const Property = sequelize.define('Property', {
     images: {
         type: DataTypes.ARRAY(DataTypes.STRING), // PostgreSQL supports arrays
         defaultValue: []
+    },
+    bedrooms: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+    bathrooms: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+    area: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0
+    },
+    hasGarden: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    hasBalcony: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     }
 });
 

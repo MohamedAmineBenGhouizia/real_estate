@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import useProperties from '../../hooks/useProperties';
 import propertyService from '../../services/propertyService';
+import { formatPrice } from '../../utils/formatPrice';
 import {
     Box,
     Typography,
@@ -20,6 +21,7 @@ import {
     DialogContent,
     DialogContentText,
     DialogActions,
+    Tooltip
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
@@ -37,73 +39,112 @@ const PropertiesManagement = () => {
                 await propertyService.delete(deleteId);
                 refetch();
             } catch (err) {
-                alert('Failed to delete property');
+                alert('Erreur lors de la suppression');
             } finally {
                 setDeleteId(null);
             }
         }
     };
 
+    const getOccupancyStatus = (property) => {
+        const today = new Date();
+        const activeReservation = property.Reservations?.find(r =>
+            new Date(r.startDate) <= today && new Date(r.endDate) >= today
+        );
+        return activeReservation ? true : false;
+    };
+
+    const getAvailabilityDate = (property) => {
+        if (!property.Reservations || property.Reservations.length === 0) return 'Immédiate';
+
+        const today = new Date();
+        // Sort reservations by end date descending
+        const sortedReservations = [...property.Reservations].sort((a, b) => new Date(b.endDate) - new Date(a.endDate));
+        const lastReservation = sortedReservations[0];
+
+        if (new Date(lastReservation.endDate) < today) return 'Immédiate';
+
+        return new Date(lastReservation.endDate).toLocaleDateString('fr-FR');
+    };
+
     return (
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-                <Typography variant="h4" fontWeight="bold">
-                    Properties
+                <Typography variant="h4" fontWeight="bold" sx={{ fontFamily: '"Playfair Display", serif' }}>
+                    Gestion des Propriétés
                 </Typography>
                 <Button
                     component={Link}
                     to="/admin/properties/new"
                     variant="contained"
+                    color="secondary"
                     startIcon={<AddIcon />}
+                    sx={{ color: 'white' }}
                 >
-                    Add Property
+                    Ajouter une Propriété
                 </Button>
             </Box>
 
             <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
                 <Table sx={{ minWidth: 650 }}>
-                    <TableHead sx={{ bgcolor: 'background.default' }}>
+                    <TableHead sx={{ bgcolor: '#f5f5f5' }}>
                         <TableRow>
-                            <TableCell>Title</TableCell>
-                            <TableCell>Type</TableCell>
-                            <TableCell>Price</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell align="right">Actions</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Titre</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Adresse</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Type</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Prix</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Surface</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Chambres</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Occupé</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Disponible le</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {properties.map((property) => (
-                            <TableRow key={property.id}>
-                                <TableCell sx={{ fontWeight: 500 }}>{property.title}</TableCell>
-                                <TableCell>{property.type}</TableCell>
-                                <TableCell>${property.price?.toLocaleString()}</TableCell>
-                                <TableCell>
-                                    <Chip
-                                        label={property.status}
-                                        color={property.status === 'available' ? 'success' : 'warning'}
-                                        size="small"
-                                        sx={{ textTransform: 'capitalize' }}
-                                    />
-                                </TableCell>
-                                <TableCell align="right">
-                                    <IconButton
-                                        component={Link}
-                                        to={`/admin/properties/${property.id}/edit`}
-                                        color="primary"
-                                        size="small"
-                                    >
-                                        <EditIcon />
-                                    </IconButton>
-                                    <IconButton
-                                        onClick={() => handleDeleteClick(property.id)}
-                                        color="error"
-                                        size="small"
-                                    >
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                        {properties.map((property) => {
+                            const isOccupied = getOccupancyStatus(property);
+                            const availableDate = getAvailabilityDate(property);
+
+                            return (
+                                <TableRow key={property.id}>
+                                    <TableCell sx={{ fontWeight: 500 }}>{property.title}</TableCell>
+                                    <TableCell>{property.address}</TableCell>
+                                    <TableCell>{property.type}</TableCell>
+                                    <TableCell>{formatPrice(property.price)}</TableCell>
+                                    <TableCell>{property.area} m²</TableCell>
+                                    <TableCell>{property.bedrooms}</TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            label={isOccupied ? 'Oui' : 'Non'}
+                                            color={isOccupied ? 'error' : 'success'}
+                                            size="small"
+                                        />
+                                    </TableCell>
+                                    <TableCell>{availableDate}</TableCell>
+                                    <TableCell align="right">
+                                        <Tooltip title="Modifier">
+                                            <IconButton
+                                                component={Link}
+                                                to={`/admin/properties/${property.id}/edit`}
+                                                color="primary"
+                                                size="small"
+                                            >
+                                                <EditIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Supprimer">
+                                            <IconButton
+                                                onClick={() => handleDeleteClick(property.id)}
+                                                color="error"
+                                                size="small"
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
                     </TableBody>
                 </Table>
             </TableContainer>
@@ -112,16 +153,16 @@ const PropertiesManagement = () => {
                 open={Boolean(deleteId)}
                 onClose={() => setDeleteId(null)}
             >
-                <DialogTitle>Confirm Delete</DialogTitle>
+                <DialogTitle>Confirmer la suppression</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Are you sure you want to delete this property? This action cannot be undone.
+                        Êtes-vous sûr de vouloir supprimer cette propriété ? Cette action est irréversible.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteId(null)}>Cancel</Button>
+                    <Button onClick={() => setDeleteId(null)}>Annuler</Button>
                     <Button onClick={handleConfirmDelete} color="error" autoFocus>
-                        Delete
+                        Supprimer
                     </Button>
                 </DialogActions>
             </Dialog>

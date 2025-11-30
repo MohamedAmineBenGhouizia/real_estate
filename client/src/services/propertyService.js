@@ -34,6 +34,11 @@ const propertyService = {
         const response = await api.delete(`/properties/${id}`);
         return response.data;
     },
+
+    getAvailability: async (id) => {
+        const response = await api.get(`/properties/${id}/availability`);
+        return response.data;
+    },
 };
 
 export default propertyService;
